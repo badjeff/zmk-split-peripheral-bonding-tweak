@@ -5,19 +5,19 @@ This module grant ability to a split central and peripherals to bond on top of a
 ### feat(Weak Bond)
 This feature allow the peripheral re-present its maiden state after reboot. And central shall pair any advertising peripherals on demend. User can build and bond peripheral accessories to existing shields. (e.g. traclball, numpad, touchpad, mouse, and RGB mouse pad)
 
-Oen downside is surfaced that paring is vulnerable to man-in-the-middle (MITM) attack on each pair. Some PKI key exchange mechanism should be implmented in next release.
+One downside is surfaced that paring is vulnerable to man-in-the-middle (MITM) attack on pairing. Some PKI key exchange mechanism should be implmented in next release.
 
 ### feat(Continuous Scan Window)
-This feature allow to set a window of scanning period after bootup for power saving. Otherwise, central will keep scanning if `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS` counter is not reached yet.
+This feature allow to set a window of scanning period after bootup for power saving. Otherwise, central will keep scanning if `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS` counter is not reached.
 
 
 ## What it does
 
-The bluetooth pairing key is cleared on every startup. The invalid security key should trigger a error after connected and before pairing. While BT stack detected a security change fail, central execute unpair to the peripheral and all old security keys . This routine will force Zephyr redo pairing one more time with new security key.
+The bluetooth pairing key is cleared on every startup on peripheral, or disconnected to central. The invalid security key should trigger an error after connected and before pairing. While BT stack detected a security change fail, central execute unpair to the peripheral to clear the old security keys. This failsafe routine will force Zephyr redo pairing one more time with new security key.
 
 In multi-peripheral setup, split central is designed to scan, pair and connect all peripherals at once compulsorily. Central does keep scanning BT advertistment until all peripheral is connected. This module patch the central to suspend compulsory scanning after a given time window.
 
-In other words, you can add a trackball shield as a non-compulsory peripheral. Leave it in sleep mode for days, wake it up on demend, hit `&sys_reset` on central to start rediscovery it. After num pad session is completed and back to sleep mode, hit reset on central to recalibrate peripheral counter. The central is free from compulsory peripherl scanning and become less power hungry.
+In other words, you can add a trackball shield as a non-compulsory peripheral accessory. Leave it in sleep mode, wake it up, hit `&sys_reset` on central to start repair it. After num pad session is completed and back to sleep mode, hit reset on central to recalibrate peripheral counter. The central is free from compulsory peripherl scanning and become less power hungry.
 
 Speaking of stopping continuous scanning, module [zmk-behavior-insomnia](https://github.com/badjeff/zmk-behavior-insomnia) is also made for same purpose but in different approach. The module is used to keep the primary split peripheral (probably, the right-side shield of a split setup) NOT fall asleep when idle. The outcome keep central does NOT need to scan sleeping peripheral, in meanwhile, it prevent all bluetooth bandwidth being used up in non-compulsory trackball peripheral setup mentioned in above.
 
