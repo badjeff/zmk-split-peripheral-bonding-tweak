@@ -49,12 +49,12 @@ And update `shield.conf` on shield.
 ```
 # Enable weak bond
 CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND=y
-# NOTE: This config is required on the central and all peripheral shields.
+# NOTE: This config is required on the central and all peripheral shield.
 
 # Enable timer to suspend continuous scanning extra peripherals within 30 seconds once any peripheral is connected.
 CONFIG_ZMK_SPLIT_BLE_PREF_CONTINUOUS_SCAN_WINDOW=30000
 # Then, stop scanning and remember count of connected peripherals of currect session.
 # NOTE 1: Auto-reconnect after sleep and wake up still works
-# NOTE 2: Use behavior &sys_reset could un-block scanning
-# NOTE 3: This only take effect on central
+# NOTE 2: Use behavior &sys_reset could start over all counter
+# NOTE 3: This config only take effect on central
 ```
