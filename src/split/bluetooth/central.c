@@ -68,7 +68,7 @@ struct peripheral_slot {
 #endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     uint16_t update_hid_indicators;
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
     uint8_t position_state[POSITION_STATE_DATA_LEN];
     uint8_t changed_positions[POSITION_STATE_DATA_LEN];
 };
@@ -81,7 +81,7 @@ static const struct bt_uuid_128 split_service_uuid = BT_UUID_INIT_128(ZMK_SPLIT_
 
 #if (CONFIG_ZMK_SPLIT_BLE_PREF_CONTINUOUS_SCAN_WINDOW > 0)
 #define CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW (CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS > 1)
-#endif
+#endif /* (CONFIG_ZMK_SPLIT_BLE_PREF_CONTINUOUS_SCAN_WINDOW > 0) */
 
 #if CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW
 static int8_t min_active_peripheral_count = 1;
@@ -120,7 +120,7 @@ static void suspend_scanning(struct k_work *work) {
         }
     }
 }
-#endif
+#endif /* CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW */
 
 K_MSGQ_DEFINE(peripheral_event_msgq, sizeof(struct zmk_position_state_changed),
               CONFIG_ZMK_SPLIT_BLE_CENTRAL_POSITION_QUEUE_SIZE, 4);
@@ -199,7 +199,7 @@ int release_peripheral_slot(int index) {
     slot->run_behavior_handle = 0;
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     slot->update_hid_indicators = 0;
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
 
     return 0;
 }
@@ -503,7 +503,7 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
                             BT_UUID_DECLARE_128(ZMK_SPLIT_BT_UPDATE_HID_INDICATORS_UUID))) {
         LOG_DBG("Found update HID indicators handle");
         slot->update_hid_indicators = bt_gatt_attr_value_handle(attr);
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
     } else if (!bt_uuid_cmp(((struct bt_gatt_chrc *)attr->user_data)->uuid,
                             BT_UUID_BAS_BATTERY_LEVEL)) {
@@ -531,7 +531,7 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     subscribed = subscribed && slot->update_hid_indicators;
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
     subscribed = subscribed && slot->batt_lvl_subscribe_params.value_handle;
 #endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
@@ -614,7 +614,7 @@ static void split_central_process_connection(struct bt_conn *conn) {
                 CONFIG_ZMK_SPLIT_BLE_PREF_CONTINUOUS_SCAN_WINDOW / 1000);
         k_work_schedule(&suspend_scanning_work, K_MSEC(CONFIG_ZMK_SPLIT_BLE_PREF_CONTINUOUS_SCAN_WINDOW));
     }
-#endif
+#endif /* CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW */
 
     // Restart scanning if necessary.
     start_scanning();
@@ -746,7 +746,7 @@ static int start_scanning(void) {
         LOG_WRN("Peripheral scanning is suspended");
         return 0;
     }
-#endif
+#endif /* CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW */
 
     // Start scanning otherwise.
     is_scanning = true;
@@ -801,7 +801,7 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
         .source = peripheral_slot_index_for_conn(conn), .state_of_charge = 0};
     k_msgq_put(&peripheral_batt_lvl_msgq, &ev, K_NO_WAIT);
     k_work_submit(&peripheral_batt_lvl_work);
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
     struct bt_conn_info info;
@@ -824,7 +824,7 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
         LOG_DBG("Peripheral scanning is resummed. (reason: device disconnection)");
         suspend_rescan = false;
     }
-#endif
+#endif /* CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW */
 
     start_scanning();
 }
@@ -843,14 +843,14 @@ static void split_central_security_changed(struct bt_conn *conn, bt_security_t l
         }
     }
 }
-#endif
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND) */
 
 static struct bt_conn_cb conn_callbacks = {
     .connected = split_central_connected,
     .disconnected = split_central_disconnected,
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
     .security_changed = split_central_security_changed,
-#endif
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND) */
 };
 
 K_THREAD_STACK_DEFINE(split_central_split_run_q_stack,
@@ -973,7 +973,7 @@ int zmk_split_bt_update_hid_indicator(zmk_hid_indicators_t indicators) {
     return k_work_submit_to_queue(&split_central_split_run_q, &split_central_update_indicators);
 }
 
-#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
 
 static int zmk_split_bt_central_init(void) {
     k_work_queue_start(&split_central_split_run_q, split_central_split_run_q_stack,
@@ -982,7 +982,7 @@ static int zmk_split_bt_central_init(void) {
 
 #if CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW
     k_work_init_delayable(&suspend_scanning_work, suspend_scanning);
-#endif
+#endif /* CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW */
 
     bt_conn_cb_register(&conn_callbacks);
 

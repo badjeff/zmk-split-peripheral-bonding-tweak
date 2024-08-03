@@ -13,9 +13,6 @@ THIS IS A PATCHED VERSION of src/split/bluetooth/peripheral.c
     #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
     #endif
 
-    #if CONFIG_ZMK_SPLIT_BLE_HAS_CONT_SCAN_WINDOW
-    #endif
-
 *************************************************************/
 
 #include <zephyr/device.h>
