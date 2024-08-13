@@ -26,6 +26,7 @@ THIS IS A PATCHED VERSION of src/split/bluetooth/central.c
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
@@ -68,7 +69,7 @@ struct peripheral_slot {
 #endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     uint16_t update_hid_indicators;
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     uint8_t position_state[POSITION_STATE_DATA_LEN];
     uint8_t changed_positions[POSITION_STATE_DATA_LEN];
 };
@@ -199,7 +200,7 @@ int release_peripheral_slot(int index) {
     slot->run_behavior_handle = 0;
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     slot->update_hid_indicators = 0;
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
 
     return 0;
 }
@@ -503,7 +504,7 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
                             BT_UUID_DECLARE_128(ZMK_SPLIT_BT_UPDATE_HID_INDICATORS_UUID))) {
         LOG_DBG("Found update HID indicators handle");
         slot->update_hid_indicators = bt_gatt_attr_value_handle(attr);
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
     } else if (!bt_uuid_cmp(((struct bt_gatt_chrc *)attr->user_data)->uuid,
                             BT_UUID_BAS_BATTERY_LEVEL)) {
@@ -531,7 +532,7 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     subscribed = subscribed && slot->update_hid_indicators;
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
     subscribed = subscribed && slot->batt_lvl_subscribe_params.value_handle;
 #endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
@@ -652,7 +653,7 @@ static bool split_central_eir_found(const bt_addr_le_t *addr) {
         return false;
     }
 
-    LOG_DBG("Initiating new connnection");
+    LOG_DBG("Initiating new connection");
     struct bt_le_conn_param *param =
         BT_LE_CONN_PARAM(CONFIG_ZMK_SPLIT_BLE_PREF_INT, CONFIG_ZMK_SPLIT_BLE_PREF_INT,
                          CONFIG_ZMK_SPLIT_BLE_PREF_LATENCY, CONFIG_ZMK_SPLIT_BLE_PREF_TIMEOUT);
@@ -801,7 +802,7 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
         .source = peripheral_slot_index_for_conn(conn), .state_of_charge = 0};
     k_msgq_put(&peripheral_batt_lvl_msgq, &ev, K_NO_WAIT);
     k_work_submit(&peripheral_batt_lvl_work);
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
     struct bt_conn_info info;
@@ -973,7 +974,23 @@ int zmk_split_bt_update_hid_indicator(zmk_hid_indicators_t indicators) {
     return k_work_submit_to_queue(&split_central_split_run_q, &split_central_update_indicators);
 }
 
-#endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS) */
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
+
+static int finish_init() {
+    return IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) ? 0 : start_scanning();
+}
+
+#if IS_ENABLED(CONFIG_SETTINGS)
+
+static int central_ble_handle_set(const char *name, size_t len, settings_read_cb read_cb,
+                                  void *cb_arg) {
+    return 0;
+}
+
+static struct settings_handler ble_central_settings_handler = {
+    .name = "ble_central", .h_set = central_ble_handle_set, .h_commit = finish_init};
+
+#endif // IS_ENABLED(CONFIG_SETTINGS)
 
 static int zmk_split_bt_central_init(void) {
     k_work_queue_start(&split_central_split_run_q, split_central_split_run_q_stack,
@@ -986,7 +1003,12 @@ static int zmk_split_bt_central_init(void) {
 
     bt_conn_cb_register(&conn_callbacks);
 
-    return IS_ENABLED(CONFIG_ZMK_BLE_CLEAR_BONDS_ON_START) ? 0 : start_scanning();
+#if IS_ENABLED(CONFIG_SETTINGS)
+    settings_register(&ble_central_settings_handler);
+    return 0;
+#else
+    return finish_init();
+#endif // IS_ENABLED(CONFIG_SETTINGS)
 }
 
 SYS_INIT(zmk_split_bt_central_init, APPLICATION, CONFIG_ZMK_BLE_INIT_PRIORITY);
