@@ -206,6 +206,16 @@ int release_peripheral_slot(int index) {
 }
 
 int reserve_peripheral_slot(const bt_addr_le_t *addr) {
+#if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
+    for (int i = 0; i < ZMK_SPLIT_BLE_PERIPHERAL_COUNT; i++) {
+        if (peripherals[i].state == PERIPHERAL_SLOT_STATE_OPEN) {
+            // Be sure the slot is fully reinitialized.
+            release_peripheral_slot(i);
+            peripherals[i].state = PERIPHERAL_SLOT_STATE_CONNECTING;
+            return i;
+        }
+    }
+#else
     int i = zmk_ble_put_peripheral_addr(addr);
     if (i >= 0) {
         if (peripherals[i].state == PERIPHERAL_SLOT_STATE_OPEN) {
@@ -215,6 +225,7 @@ int reserve_peripheral_slot(const bt_addr_le_t *addr) {
             return i;
         }
     }
+#endif // IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND)
 
     return -ENOMEM;
 }
