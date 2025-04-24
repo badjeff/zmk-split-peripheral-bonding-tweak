@@ -1,11 +1,12 @@
 # Zmk Split Peripheral Bonding Tweak
 
-This an **experimental** module that grant ability to a split central and peripherals to bond on top of a forgettable bluetooth pairing. Two add-on feature are designed to serve this purpose on ZMK.
+This an **experimental** of an **experimental module** that grant ability to a split central and peripherals to bond on top of a forgettable bluetooth pairing. Two add-on feature are designed to serve this purpose on ZMK.
 
 ### feat(Weak Bond)
 This feature allow the peripheral re-present its maiden state after reboot. And central shall pair any advertising peripherals on demend. User can build and bond peripheral accessories to existing shields. (e.g. traclball, numpad, touchpad, mouse, and RGB mouse pad)
 
-One downside is surfaced that paring is vulnerable to man-in-the-middle (MITM) attack on pairing. Some PKI key exchange mechanism should be implmented in next release.
+> [!CAUTION]
+> One drawback is that pairing is vulnerable to man-in-the-middle (MITM) attacks. After the connection handshake is established, some PKI key exchange mechanism should be implemented. It is opened to discuss.
 
 ### feat(Continuous Scan Window)
 This feature allow to set a window of scanning period after bootup for power saving. Otherwise, central will keep scanning if `CONFIG_ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS` counter is not reached.
