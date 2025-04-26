@@ -18,7 +18,7 @@ The bluetooth pairing key is cleared on every startup on peripheral, or disconne
 
 In multi-peripheral setup, split central is designed to scan, pair and connect all peripherals at once compulsorily. Central does keep scanning BT advertistment until all peripheral is connected. This module patch the central to suspend compulsory scanning after a given time window.
 
-In other words, you can add a trackball shield as a non-compulsory peripheral accessory. Leave it in sleep mode, wake it up, hit `&sys_reset` on central to start repair it. After num pad session is completed and back to sleep mode, hit reset on central to recalibrate peripheral counter. The central is free from compulsory peripherl scanning and become less power hungry.
+In other words, you can add a trackball shield as a non-compulsory peripheral accessory. Leave it in sleep mode, wake it up, hit `&sys_reset` on central to start repair it. After you finish using the trackball and put it to sleep mode manually (see zmk-behavior-insomnia on below), hit reset on central to recalibrate peripheral counter. The central is free from compulsory peripherl scanning and become less power hungry.
 
 Speaking of stopping continuous scanning, module [zmk-behavior-insomnia](https://github.com/badjeff/zmk-behavior-insomnia) is also made for same purpose but in different approach. The module is used to keep the primary split peripheral (probably, the right-side shield of a split setup) NOT fall asleep when idle. The outcome keep central does NOT need to scan sleeping peripheral, in meanwhile, it prevent all bluetooth bandwidth being used up in non-compulsory trackball peripheral setup mentioned in above.
 
