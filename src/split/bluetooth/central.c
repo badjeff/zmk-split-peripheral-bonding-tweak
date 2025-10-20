@@ -1065,9 +1065,13 @@ static void split_central_disconnected(struct bt_conn *conn, uint8_t reason) {
     struct bt_conn_info info;
     bt_conn_get_info(conn, &info);
     LOG_WRN("Disconnected for ROLE %d", info.role);
-    if (info.role != BT_CONN_ROLE_PERIPHERAL) {
-        LOG_WRN("Unpairing peripheral: %s", addr);
+    if (info.role == BT_CONN_ROLE_CENTRAL) {
+        LOG_WRN("Disconnected from peripheral, unpairing: %s", addr);
         bt_unpair(BT_ID_DEFAULT, bt_conn_get_dst(conn));
+    }
+    else if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+        LOG_WRN("Disconnected from host");
+        return;
     }
 #endif /* IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_PREF_WEAK_BOND) */
 
@@ -1099,7 +1103,7 @@ static void split_central_security_changed(struct bt_conn *conn, bt_security_t l
         struct bt_conn_info info;
         bt_conn_get_info(conn, &info);
         LOG_WRN("Security failed: %s level %u err %d for ROLE %d", addr, level, err, info.role);
-        if (info.role != BT_CONN_ROLE_PERIPHERAL) {
+        if (info.role == BT_CONN_ROLE_CENTRAL) {
             LOG_WRN("Unpairing peripheral: %s", addr);
             bt_unpair(BT_ID_DEFAULT, bt_conn_get_dst(conn));
             return;
